@@ -63,7 +63,8 @@ class SCD30:
     @property
     def measurement_interval(self):
         """Sets the interval between readings"""
-        raise RuntimeError("NOT WORKING")
+        # raise RuntimeError("NOT WORKING")
+        return self._read_register(_CMD_SET_MEASUREMENT_INTERVAL)
 
     @measurement_interval.setter
     def measurement_interval(self, value):
@@ -72,7 +73,7 @@ class SCD30:
     @property
     def self_calibration_enabled(self):
         """Enables or disables self calibration"""
-        raise RuntimeError("NOT IMPLEMENTED")
+        return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
     @self_calibration_enabled.setter
     def self_calibration_enabled(self, enabled):
@@ -104,6 +105,19 @@ class SCD30:
 
         return self._read_register(_CMD_GET_DATA_READY)
 
+    @property
+    def temperature_offset(self):
+        """Specifies the offset to be added to the reported measurements to account for a bias in
+        the measured signal."""
+        raw_offset = self._read_register(_CMD_SET_TEMPERATURE_OFFSET)
+        return raw_offset / 100.0
+
+    @temperature_offset.setter
+    def temperature_offset(self, offset):
+        # TODO: check value before set
+
+        self._send_command(_CMD_SET_TEMPERATURE_OFFSET, int(offset * 100))
+
     def _read_register(self, reg_addr):
         self._buffer[0] = reg_addr >> 8
         self._buffer[1] = reg_addr & 0xFF
@@ -114,7 +128,9 @@ class SCD30:
     @property
     def co2(self):
         """Returns the CO2 concentration in PPM (parts per million)"""
-        return self._read_data()
+        if self._data_available:
+            self._read_data()
+        return self._co2
 
     def _read_data(self):
         self._send_command(_CMD_READ_MEASUREMENT)
@@ -136,7 +152,7 @@ class SCD30:
         hum = unpack(">f", self._buffer[12:14] + self._buffer[15:17])[0]
         self._temperature = temp
         self._relative_humitidy = hum
-        return co2
+        self._co2 = co2
 
     def _check_crc(self, data_bytes, crc):
         return crc == self._crc8(bytearray(data_bytes))
