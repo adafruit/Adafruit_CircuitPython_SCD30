@@ -67,21 +67,21 @@ Usage Example
     import busio
     import adafruit_scd30
 
-    i2c = board.I2C()
-
-
+    i2c = busio.I2C(board.SCL, board.SDA)
     scd = adafruit_scd30.SCD30(i2c)
-    print("Done with init")
 
     while True:
-        data = scd._data_available
-        if data:
+        # since the measurement interval is long (2+ seconds) we check for new data before reading
+        # the values, to ensure current readings.
+        if scd.data_available:
             print("Data Available!")
             print("CO2:", scd.co2, "PPM")
-            print("Temperature:", scd._temperature, "degrees C")
-            print("Humidity::", scd._relative_humitidy, "%%rH")
-        else:
-            print("no data")
+            print("Temperature:", scd.temperature, "degrees C")
+            print("Humidity:", scd.relative_humidity, "%%rH")
+            print("")
+            print("Waiting for new data...")
+            print("")
+
         time.sleep(0.5)
 
 Contributing
