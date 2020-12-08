@@ -28,9 +28,11 @@ Implementation Notes
 """
 
 # imports
+from time import sleep
 from struct import unpack_from, unpack
 import adafruit_bus_device.i2c_device as i2c_device
 from micropython import const
+
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_SCD30.git"
@@ -44,21 +46,37 @@ _CMD_AUTOMATIC_SELF_CALIBRATION = const(0x5306)
 _CMD_SET_FORCED_RECALIBRATION_FACTOR = const(0x5204)
 _CMD_SET_TEMPERATURE_OFFSET = const(0x5403)
 _CMD_SET_ALTITUDE_COMPENSATION = const(0x5102)
+_CMD_SOFT_RESET = const(0xD304)
 
 
 class SCD30:
     """CircuitPython helper class for using the SCD30 e-CO2 sensor"""
 
-    def __init__(self, i2c_bus, address=SCD30_DEFAULT_ADDR):
+    def __init__(self, i2c_bus, ambient_pressure=0, address=SCD30_DEFAULT_ADDR):
+        if ambient_pressure != 0:
+            if ambient_pressure < 700 or ambient_pressure > 1200:
+                raise AttributeError("`ambient_pressure` must be from 700-1200 mBar")
+
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         self._buffer = bytearray(18)
         self._crc_buffer = bytearray(2)
-        self._send_command(_CMD_CONTINUOUS_MEASUREMENT, 0)
+
+        self.reset()
+
         self.measurement_interval = 2
         self.self_calibration_enabled = True
+        # sets ambient pressure and starts continuous measurements
+        self.ambient_pressure = ambient_pressure
+
+        # cached readings
         self._temperature = None
         self._relative_humitidy = None
         self._co2 = None
+
+    def reset(self):
+        """Perform a soft reset on the sensor, restoring default values"""
+        self._send_command(_CMD_SOFT_RESET)
+        sleep(0.030)  # not mentioned by datasheet, but required to avoid IO error
 
     @property
     def measurement_interval(self):
@@ -72,7 +90,12 @@ class SCD30:
 
     @property
     def self_calibration_enabled(self):
-        """Enables or disables self calibration"""
+        """Enables or disables automatic self calibration (ASC). To work correctly, the sensor must
+        be on and active for 7 days after enabling ASC, and exposed to fresh air for at least 1 hour
+        per day. Consult the manufacturer's documentation for more information.
+
+        ´**NOTE**: Enabling self calibration will override any values set by specifying a
+        `forced_recalibration_reference`"""
         return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
     @self_calibration_enabled.setter
@@ -106,6 +129,30 @@ class SCD30:
         return self._read_register(_CMD_GET_DATA_READY)
 
     @property
+    def ambient_pressure(self):
+        """Specifies the ambient air pressure at the measurement location in mBar. Setting this
+        value adjusts the CO2 measurement calculations to account for the air pressure's effect on
+        readings. Values must be in mBar, from 700 to 1200 mBar"""
+        return self._read_register(_CMD_CONTINUOUS_MEASUREMENT)
+
+    @ambient_pressure.setter
+    def ambient_pressure(self, pressure_mbar):
+        if pressure_mbar != 0 and (pressure_mbar > 1200 or pressure_mbar < 700):
+            raise AttributeError("ambient_pressure must be from 700 to 1200 mBar")
+        self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
+
+    @property
+    def altitude(self):
+        """Specifies the altitude at the measurement location in meters above sea level. Setting
+        this value adjusts the CO2 measurement calculations to account for the air pressure's effect
+        on readings"""
+        return self._read_register(_CMD_SET_ALTITUDE_COMPENSATION)
+
+    @altitude.setter
+    def altitude(self, altitude):
+        self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, altitude)
+
+    @property
     def temperature_offset(self):
         """Specifies the offset to be added to the reported measurements to account for a bias in
         the measured signal."""
@@ -117,6 +164,19 @@ class SCD30:
         # TODO: check value before set
 
         self._send_command(_CMD_SET_TEMPERATURE_OFFSET, int(offset * 100))
+
+    @property
+    def forced_recalibration_reference(self):
+        """Specifies the concentration of a reference source of CO2 placed in close proximity to the
+        sensor. The value must be from 400 to 2000 ppm.
+
+        ´**NOTE**: Specifying a forced recalibration reference will override any calibration values
+        set by Automatic Self Calibration"""
+        return self._read_register(_CMD_SET_FORCED_RECALIBRATION_FACTOR)
+
+    @forced_recalibration_reference.setter
+    def forced_recalibration_reference(self, reference_value):
+        self._send_command(_CMD_SET_FORCED_RECALIBRATION_FACTOR, reference_value)
 
     def _read_register(self, reg_addr):
         self._buffer[0] = reg_addr >> 8
