@@ -80,7 +80,9 @@ class SCD30:
 
     @property
     def measurement_interval(self):
-        """Sets the interval between readings in seconds. The interval value must be from 2-1800"""
+        """Sets the interval between readings in seconds. The interval value must be from 2-1800
+
+        **NOTE** This value will be saved and will not be reset on boot."""
 
         return self._read_register(_CMD_SET_MEASUREMENT_INTERVAL)
 
@@ -96,8 +98,11 @@ class SCD30:
         be on and active for 7 days after enabling ASC, and exposed to fresh air for at least 1 hour
         per day. Consult the manufacturer's documentation for more information.
 
-        ´**NOTE**: Enabling self calibration will override any values set by specifying a
-        `forced_recalibration_reference`"""
+        **NOTE**: Enabling self calibration will override any values set by specifying a
+        `forced_recalibration_reference`
+
+        **NOTE** This setting will be saved and will not be reset on boot."""
+
         return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
     @self_calibration_enabled.setter
@@ -126,7 +131,9 @@ class SCD30:
     def altitude(self):
         """Specifies the altitude at the measurement location in meters above sea level. Setting
         this value adjusts the CO2 measurement calculations to account for the air pressure's effect
-        on readings"""
+        on readings.
+
+        **NOTE** This value will be stored and will not be reset on boot."""
         return self._read_register(_CMD_SET_ALTITUDE_COMPENSATION)
 
     @altitude.setter
@@ -137,7 +144,10 @@ class SCD30:
     def temperature_offset(self):
         """Specifies the offset to be added to the reported measurements to account for a bias in
         the measured signal. Value is  in degrees C with a resolution of 0.01 degrees and a maximum
-        value of 655.35"""
+        value of 655.35
+
+        **NOTE** This value will be saved and will not be reset on boot."""
+
         raw_offset = self._read_register(_CMD_SET_TEMPERATURE_OFFSET)
         return raw_offset / 100.0
 
