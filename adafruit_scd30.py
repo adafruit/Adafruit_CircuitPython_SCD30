@@ -71,7 +71,7 @@ class SCD30:
         # cached readings
         self._temperature = None
         self._relative_humitidy = None
-        self._co2 = None
+        self._e_co2 = None
 
     def reset(self):
         """Perform a soft reset on the sensor, restoring default values"""
@@ -174,13 +174,13 @@ class SCD30:
         self._send_command(_CMD_SET_FORCED_RECALIBRATION_FACTOR, reference_value)
 
     @property
-    def co2(self):
+    def eCO2(self):  # pylint:disable=invalid-name
         """Returns the CO2 concentration in PPM (parts per million)
 
         **NOTE** Between measurements, the most recent reading will be cached and returned."""
         if self.data_available:
             self._read_data()
-        return self._co2
+        return self._e_co2
 
     @property
     def temperature(self):
@@ -241,12 +241,11 @@ class SCD30:
         if not crcs_good:
             raise RuntimeError("CRC check failed while reading data")
 
-        co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
-        temp = unpack(">f", self._buffer[6:8] + self._buffer[9:11])[0]
-        hum = unpack(">f", self._buffer[12:14] + self._buffer[15:17])[0]
-        self._temperature = temp
-        self._relative_humitidy = hum
-        self._co2 = co2
+        self._e_co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
+        self._temperature = unpack(">f", self._buffer[6:8] + self._buffer[9:11])[0]
+        self._relative_humitidy = unpack(
+            ">f", self._buffer[12:14] + self._buffer[15:17]
+        )[0]
 
     def _check_crc(self, data_bytes, crc):
         return crc == self._crc8(bytearray(data_bytes))

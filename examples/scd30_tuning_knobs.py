@@ -31,7 +31,7 @@ while True:
     data = scd.data_available
     if data:
         print("Data Available!")
-        print("CO2:", scd.co2, "PPM")
+        print("eCO2:", scd.eCO2, "PPM")
         print("Temperature:", scd.temperature, "degrees C")
         print("Humidity::", scd.relative_humidity, "%%rH")
         print("")
