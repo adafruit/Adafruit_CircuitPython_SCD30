@@ -70,7 +70,7 @@ class SCD30:
 
         # cached readings
         self._temperature = None
-        self._relative_humitidy = None
+        self._relative_humidity = None
         self._e_co2 = None
 
     def reset(self):
@@ -198,7 +198,7 @@ class SCD30:
         **NOTE** Between measurements, the most recent reading will be cached and returned. """
         if self.data_available:
             self._read_data()
-        return self._relative_humitidy
+        return self._relative_humidity
 
     def _send_command(self, command, arguments=None):
         # if there is an argument, calculate the CRC and include it as well.
@@ -223,7 +223,10 @@ class SCD30:
         self._buffer[0] = reg_addr >> 8
         self._buffer[1] = reg_addr & 0xFF
         with self.i2c_device as i2c:
-            i2c.write_then_readinto(self._buffer, self._buffer, out_end=2, in_end=2)
+            i2c.write(self._buffer, end=2)
+        # separate readinto because the SCD30 wants an i2c stop before the read (non-repeated start)
+        with self.i2c_device as i2c:
+            i2c.readinto(self._buffer, end=2)
         return unpack_from(">H", self._buffer)[0]
 
     def _read_data(self):
@@ -243,7 +246,7 @@ class SCD30:
 
         self._e_co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
         self._temperature = unpack(">f", self._buffer[6:8] + self._buffer[9:11])[0]
-        self._relative_humitidy = unpack(
+        self._relative_humidity = unpack(
             ">f", self._buffer[12:14] + self._buffer[15:17]
         )[0]
 
