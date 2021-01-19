@@ -65,6 +65,9 @@ class SCD30:
 
         self.measurement_interval = 2
         self.self_calibration_enabled = True
+
+        # Not in datasheet, but needed for use with Blinka/MCP2221A
+        sleep(0.01)
         # sets ambient pressure and starts continuous measurements
         self.ambient_pressure = ambient_pressure
 
