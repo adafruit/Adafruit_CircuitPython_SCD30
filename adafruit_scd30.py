@@ -61,7 +61,8 @@ class SCD30:
         self._buffer = bytearray(18)
         self._crc_buffer = bytearray(2)
 
-        self.reset()
+        # Disabled for use with Blinka/MCP2221A
+        # self.reset()
 
         self.measurement_interval = 2
         self.self_calibration_enabled = True
