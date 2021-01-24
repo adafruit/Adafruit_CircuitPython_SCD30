@@ -26,7 +26,7 @@ setup(
     name="adafruit-circuitpython-scd30",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
-    description="Helper library for the SCD30 e-CO2 sensor",
+    description="Helper library for the SCD30 CO2 sensor",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     # The project's main homepage.

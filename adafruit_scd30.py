@@ -5,7 +5,7 @@
 `adafruit_scd30`
 ================================================================================
 
-Helper library for the SCD30 e-CO2 sensor
+Helper library for the SCD30 CO2 sensor
 
 
 * Author(s): Bryan Siepert
@@ -50,7 +50,7 @@ _CMD_SOFT_RESET = const(0xD304)
 
 
 class SCD30:
-    """CircuitPython helper class for using the SCD30 e-CO2 sensor"""
+    """CircuitPython helper class for using the SCD30 CO2 sensor"""
 
     def __init__(self, i2c_bus, ambient_pressure=0, address=SCD30_DEFAULT_ADDR):
         if ambient_pressure != 0:
@@ -71,7 +71,7 @@ class SCD30:
         # cached readings
         self._temperature = None
         self._relative_humidity = None
-        self._e_co2 = None
+        self._co2 = None
 
     def reset(self):
         """Perform a soft reset on the sensor, restoring default values"""
@@ -174,13 +174,13 @@ class SCD30:
         self._send_command(_CMD_SET_FORCED_RECALIBRATION_FACTOR, reference_value)
 
     @property
-    def eCO2(self):  # pylint:disable=invalid-name
+    def CO2(self):  # pylint:disable=invalid-name
         """Returns the CO2 concentration in PPM (parts per million)
 
         **NOTE** Between measurements, the most recent reading will be cached and returned."""
         if self.data_available:
             self._read_data()
-        return self._e_co2
+        return self._co2
 
     @property
     def temperature(self):
@@ -244,7 +244,7 @@ class SCD30:
         if not crcs_good:
             raise RuntimeError("CRC check failed while reading data")
 
-        self._e_co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
+        self._co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
         self._temperature = unpack(">f", self._buffer[6:8] + self._buffer[9:11])[0]
         self._relative_humidity = unpack(
             ">f", self._buffer[12:14] + self._buffer[15:17]
