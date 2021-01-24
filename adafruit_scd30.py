@@ -15,7 +15,7 @@ Implementation Notes
 
 **Hardware:**
 
-* `Adafruit SCD30 Breakout <https://www.adafruit.com/product/48xx>`_
+* `Adafruit SCD30 Breakout <https://www.adafruit.com/product/4867>`_
 
 **Software and Dependencies:**
 
