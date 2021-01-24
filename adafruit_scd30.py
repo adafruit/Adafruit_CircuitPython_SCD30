@@ -82,7 +82,7 @@ class SCD30:
     def measurement_interval(self):
         """Sets the interval between readings in seconds. The interval value must be from 2-1800
 
-        **NOTE** This value will be saved and will not be reset on boot or by callint `reset`."""
+        **NOTE** This value will be saved and will not be reset on boot or by calling `reset`."""
 
         return self._read_register(_CMD_SET_MEASUREMENT_INTERVAL)
 
@@ -101,7 +101,7 @@ class SCD30:
         **NOTE**: Enabling self calibration will override any values set by specifying a
         `forced_recalibration_reference`
 
-        **NOTE** This setting will be saved and will not be reset on boot or by callint `reset`."""
+        **NOTE** This setting will be saved and will not be reset on boot or by calling `reset`."""
 
         return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
@@ -133,7 +133,7 @@ class SCD30:
         this value adjusts the CO2 measurement calculations to account for the air pressure's effect
         on readings.
 
-        **NOTE** This value will be stored and will not be reset on boot or by callint `reset`."""
+        **NOTE** This value will be stored and will not be reset on boot or by calling `reset`."""
         return self._read_register(_CMD_SET_ALTITUDE_COMPENSATION)
 
     @altitude.setter
@@ -143,10 +143,10 @@ class SCD30:
     @property
     def temperature_offset(self):
         """Specifies the offset to be added to the reported measurements to account for a bias in
-        the measured signal. Value is  in degrees Celcius with a resolution of 0.01 degrees and a
+        the measured signal. Value is in degrees Celsius with a resolution of 0.01 degrees and a
         maximum value of 655.35 C
 
-        **NOTE** This value will be saved and will not be reset on boot or by callint `reset`."""
+        **NOTE** This value will be saved and will not be reset on boot or by calling `reset`."""
 
         raw_offset = self._read_register(_CMD_SET_TEMPERATURE_OFFSET)
         return raw_offset / 100.0
