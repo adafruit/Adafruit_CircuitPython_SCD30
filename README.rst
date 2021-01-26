@@ -17,7 +17,7 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-Helper library for the SCD30 e-CO2 sensor
+Helper library for the SCD30 CO2 sensor
 
 
 Dependencies
@@ -75,7 +75,7 @@ Usage Example
         # the values, to ensure current readings.
         if scd.data_available:
             print("Data Available!")
-            print("eCO2:", scd.eCO2, "PPM")
+            print("CO2:", scd.CO2, "PPM")
             print("Temperature:", scd.temperature, "degrees C")
             print("Humidity:", scd.relative_humidity, "%%rH")
             print("")
