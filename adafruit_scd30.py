@@ -123,6 +123,7 @@ class SCD30:
 
     @ambient_pressure.setter
     def ambient_pressure(self, pressure_mbar):
+        pressure_mbar = int(pressure_mbar)
         if pressure_mbar != 0 and (pressure_mbar > 1200 or pressure_mbar < 700):
             raise AttributeError("ambient_pressure must be from 700 to 1200 mBar")
         self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
@@ -138,7 +139,7 @@ class SCD30:
 
     @altitude.setter
     def altitude(self, altitude):
-        self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, altitude)
+        self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, int(altitude))
 
     @property
     def temperature_offset(self):
