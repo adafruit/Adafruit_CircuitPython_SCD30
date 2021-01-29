@@ -139,7 +139,7 @@ class SCD30:
 
     @altitude.setter
     def altitude(self, altitude):
-        self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, altitude)
+        self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, int(altitude))
 
     @property
     def temperature_offset(self):
