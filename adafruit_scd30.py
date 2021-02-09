@@ -79,6 +79,7 @@ class SCD30:
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
         sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
+        # pylint:disable=protected-access
         # are we using Blinka?
         if hasattr(self.i2c_device.i2c, "_i2c"):
             # with an MCP2221?
@@ -206,7 +207,7 @@ class SCD30:
     def relative_humidity(self):
         """Returns the current relative humidity in %rH.
 
-        **NOTE** Between measurements, the most recent reading will be cached and returned. """
+        **NOTE** Between measurements, the most recent reading will be cached and returned."""
         if self.data_available:
             self._read_data()
         return self._relative_humidity
