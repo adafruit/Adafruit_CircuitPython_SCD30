@@ -63,9 +63,11 @@ class SCD30:
 
         self.reset()
 
+        # set continuous measurement interval in seconds
         self.measurement_interval = 2
+        # activate automatic self-calibration
         self.self_calibration_enabled = True
-        # sets ambient pressure and starts continuous measurements
+        # trigger continuous measurements with optional ambient pressure compensation
         self.ambient_pressure = ambient_pressure
 
         # cached readings
@@ -76,7 +78,13 @@ class SCD30:
     def reset(self):
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
-        sleep(0.030)  # not mentioned by datasheet, but required to avoid IO error
+        sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
+        # are we using Blinka?
+        if hasattr(self.i2c_device.i2c, "_i2c"):
+            # with an MCP2221?
+            if hasattr(self.i2c_device.i2c._i2c, "_mcp2221"):
+                # then lets reset that too
+                self.i2c_device.i2c._i2c._mcp2221._reset()
 
     @property
     def measurement_interval(self):
@@ -108,6 +116,8 @@ class SCD30:
     @self_calibration_enabled.setter
     def self_calibration_enabled(self, enabled):
         self._send_command(_CMD_AUTOMATIC_SELF_CALIBRATION, enabled)
+        if enabled:
+            sleep(0.01)
 
     @property
     def data_available(self):
