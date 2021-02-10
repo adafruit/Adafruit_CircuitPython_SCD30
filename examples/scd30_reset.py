@@ -17,6 +17,7 @@ scd.reset()
 # See below for more information:
 # https://github.com/adafruit/Adafruit_CircuitPython_SCD30/issues/2
 # Can get around it by resetting via this hack.
+# pylint:disable=protected-access
 if hasattr(i2c, "_i2c"):
     # we're using Blinka, check for MCP2221
     if hasattr(i2c._i2c, "_mcp2221"):
