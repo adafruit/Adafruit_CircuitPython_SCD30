@@ -61,11 +61,11 @@ class SCD30:
         self._buffer = bytearray(18)
         self._crc_buffer = bytearray(2)
 
-        self.reset()
-
+        # set continuous measurement interval in seconds
         self.measurement_interval = 2
+        # activate automatic self-calibration
         self.self_calibration_enabled = True
-        # sets ambient pressure and starts continuous measurements
+        # trigger continuous measurements with optional ambient pressure compensation
         self.ambient_pressure = ambient_pressure
 
         # cached readings
@@ -76,7 +76,7 @@ class SCD30:
     def reset(self):
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
-        sleep(0.030)  # not mentioned by datasheet, but required to avoid IO error
+        sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
 
     @property
     def measurement_interval(self):
@@ -108,6 +108,8 @@ class SCD30:
     @self_calibration_enabled.setter
     def self_calibration_enabled(self, enabled):
         self._send_command(_CMD_AUTOMATIC_SELF_CALIBRATION, enabled)
+        if enabled:
+            sleep(0.01)
 
     @property
     def data_available(self):
@@ -196,7 +198,7 @@ class SCD30:
     def relative_humidity(self):
         """Returns the current relative humidity in %rH.
 
-        **NOTE** Between measurements, the most recent reading will be cached and returned. """
+        **NOTE** Between measurements, the most recent reading will be cached and returned."""
         if self.data_available:
             self._read_data()
         return self._relative_humidity
