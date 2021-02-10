@@ -61,8 +61,6 @@ class SCD30:
         self._buffer = bytearray(18)
         self._crc_buffer = bytearray(2)
 
-        self.reset()
-
         # set continuous measurement interval in seconds
         self.measurement_interval = 2
         # activate automatic self-calibration
@@ -79,13 +77,6 @@ class SCD30:
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
         sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
-        # pylint:disable=protected-access
-        # are we using Blinka?
-        if hasattr(self.i2c_device.i2c, "_i2c"):
-            # with an MCP2221?
-            if hasattr(self.i2c_device.i2c._i2c, "_mcp2221"):
-                # then lets reset that too
-                self.i2c_device.i2c._i2c._mcp2221._reset()
 
     @property
     def measurement_interval(self):
