@@ -63,8 +63,6 @@ class SCD30:
 
         # set continuous measurement interval in seconds
         self.measurement_interval = 2
-        # activate automatic self-calibration
-        self.self_calibration_enabled = True
         # trigger continuous measurements with optional ambient pressure compensation
         self.ambient_pressure = ambient_pressure
 
