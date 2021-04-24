@@ -23,12 +23,12 @@ Table of Contents
 .. toctree::
     :caption: Tutorials
 
+    Adafruit SCD30 Breakout Learning Guide <https://learn.adafruit.com/adafruit-scd30>
 
 .. toctree::
     :caption: Related Products
 
-
-* Adafruit SCD30 Breakout <https://www.adafruit.com/product/48xx>`_
+    Adafruit SCD30 Breakout <https://www.adafruit.com/product/4867>
 
 .. toctree::
     :caption: Other Links
