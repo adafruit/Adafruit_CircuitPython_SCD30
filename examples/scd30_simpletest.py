@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: Unlicense
 import time
 import board
-import busio
 import adafruit_scd30
 
-i2c = busio.I2C(board.SCL, board.SDA)
+i2c = board.I2C()  # uses board.SCL and board.SDA
 scd = adafruit_scd30.SCD30(i2c)
 
 while True:
