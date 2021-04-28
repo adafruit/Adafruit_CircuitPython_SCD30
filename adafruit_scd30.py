@@ -87,8 +87,8 @@ class SCD30:
 
     def __init__(self, i2c_bus, ambient_pressure=0, address=SCD30_DEFAULT_ADDR):
         if ambient_pressure != 0:
-            if ambient_pressure < 700 or ambient_pressure > 1200:
-                raise AttributeError("`ambient_pressure` must be from 700-1200 mBar")
+            if ambient_pressure < 700 or ambient_pressure > 1400:
+                raise AttributeError("`ambient_pressure` must be from 700-1400 mBar")
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         self._buffer = bytearray(18)
@@ -158,14 +158,14 @@ class SCD30:
     def ambient_pressure(self):
         """Specifies the ambient air pressure at the measurement location in mBar. Setting this
         value adjusts the CO2 measurement calculations to account for the air pressure's effect on
-        readings. Values must be in mBar, from 700 to 1200 mBar"""
+        readings. Values must be in mBar, from 700 to 1400 mBar"""
         return self._read_register(_CMD_CONTINUOUS_MEASUREMENT)
 
     @ambient_pressure.setter
     def ambient_pressure(self, pressure_mbar):
         pressure_mbar = int(pressure_mbar)
-        if pressure_mbar != 0 and (pressure_mbar > 1200 or pressure_mbar < 700):
-            raise AttributeError("ambient_pressure must be from 700 to 1200 mBar")
+        if pressure_mbar != 0 and (pressure_mbar > 1400 or pressure_mbar < 700):
+            raise AttributeError("ambient_pressure must be from 700 to 1400 mBar")
         self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
 
     @property
