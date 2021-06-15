@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: Unlicense
 import time
 import board
+import busio
 import adafruit_scd30
 
-i2c = board.I2C()  # uses board.SCL and board.SDA
+# SCD-30 has tempremental I2C with clock stretching, datasheet recommends
+# starting at 50KHz
+i2c = busio.I2C(board.SCL, board.SDA, frequency=50000)
 scd = adafruit_scd30.SCD30(i2c)
 # scd.temperature_offset = 10
 print("Temperature offset:", scd.temperature_offset)
