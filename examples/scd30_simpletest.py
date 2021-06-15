@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Unlicense
 import time
 import board
-import adafruit_scd30
 import busio
+import adafruit_scd30
 
 # SCD-30 has tempremental I2C with clock stretching, and delays
 # It's best to start using I2C clock 1000 Hz and then you can increase it

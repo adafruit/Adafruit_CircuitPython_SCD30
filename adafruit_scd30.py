@@ -285,7 +285,8 @@ class SCD30:
         self._buffer[1] = reg_addr & 0xFF
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=2)
-            # separate readinto because the SCD30 wants an i2c stop before the read (non-repeated start)
+            # separate readinto because the SCD30 wants an i2c stop before the read
+            # (non-repeated start)
             time.sleep(0.005)  # min 3 ms delay
             i2c.readinto(self._buffer, end=3)
         if not self._check_crc(self._buffer[:2], self._buffer[2]):
