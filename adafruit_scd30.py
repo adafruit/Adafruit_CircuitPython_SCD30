@@ -278,7 +278,7 @@ class SCD30:
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=end_byte)
-        time.sleep(0.05) # 3ms min delay
+        time.sleep(0.05)  # 3ms min delay
 
     def _read_register(self, reg_addr):
         self._buffer[0] = reg_addr >> 8
