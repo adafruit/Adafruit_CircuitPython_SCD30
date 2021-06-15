@@ -285,11 +285,12 @@ class SCD30:
         self._buffer[1] = reg_addr & 0xFF
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=2)
-        # separate readinto because the SCD30 wants an i2c stop before the read (non-repeated start)
-        time.sleep(0.005)  # min 3 ms delay
-        with self.i2c_device as i2c:
-            i2c.readinto(self._buffer, end=2)
-        return unpack_from(">H", self._buffer)[0]
+            # separate readinto because the SCD30 wants an i2c stop before the read (non-repeated start)
+            time.sleep(0.005)  # min 3 ms delay
+            i2c.readinto(self._buffer, end=3)
+        if not self._check_crc(self._buffer[:2], self._buffer[2]):
+            raise RuntimeError("CRC check failed while reading data")
+        return unpack_from(">H", self._buffer[0:2])[0]
 
     def _read_data(self):
         self._send_command(_CMD_READ_MEASUREMENT)
