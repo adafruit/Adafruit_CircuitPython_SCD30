@@ -28,7 +28,7 @@ Implementation Notes
 """
 
 # imports
-from time import sleep
+import time
 from struct import unpack_from, unpack
 import adafruit_bus_device.i2c_device as i2c_device
 from micropython import const
@@ -107,7 +107,7 @@ class SCD30:
     def reset(self):
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
-        sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
+        time.sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
 
     @property
     def measurement_interval(self):
@@ -147,7 +147,7 @@ class SCD30:
     def self_calibration_enabled(self, enabled):
         self._send_command(_CMD_AUTOMATIC_SELF_CALIBRATION, enabled)
         if enabled:
-            sleep(0.01)
+            time.sleep(0.01)
 
     @property
     def data_available(self):
@@ -278,6 +278,7 @@ class SCD30:
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=end_byte)
+        time.sleep(0.05) # 3ms min delay
 
     def _read_register(self, reg_addr):
         self._buffer[0] = reg_addr >> 8
@@ -285,6 +286,7 @@ class SCD30:
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=2)
         # separate readinto because the SCD30 wants an i2c stop before the read (non-repeated start)
+        time.sleep(0.005)  # min 3 ms delay
         with self.i2c_device as i2c:
             i2c.readinto(self._buffer, end=2)
         return unpack_from(">H", self._buffer)[0]

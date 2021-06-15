@@ -4,8 +4,12 @@
 import time
 import board
 import adafruit_scd30
+import busio
 
-i2c = board.I2C()  # uses board.SCL and board.SDA
+# SCD-30 has tempremental I2C with clock stretching, and delays
+# It's best to start using I2C clock 1000 Hz and then you can increase it
+# until the sensor stops responding (NAK fails, etc)
+i2c = busio.I2C(board.SCL, board.SDA, frequency=1000)
 scd = adafruit_scd30.SCD30(i2c)
 
 while True:
@@ -13,9 +17,9 @@ while True:
     # the values, to ensure current readings.
     if scd.data_available:
         print("Data Available!")
-        print("CO2:", scd.CO2, "PPM")
-        print("Temperature:", scd.temperature, "degrees C")
-        print("Humidity:", scd.relative_humidity, "%%rH")
+        print("CO2: %d PPM" % scd.CO2)
+        print("Temperature: %0.2f degrees C" % scd.temperature)
+        print("Humidity: %0.2f %% rH" % scd.relative_humidity)
         print("")
         print("Waiting for new data...")
         print("")
