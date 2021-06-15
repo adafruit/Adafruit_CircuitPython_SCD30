@@ -7,9 +7,10 @@ import busio
 import adafruit_scd30
 
 # SCD-30 has tempremental I2C with clock stretching, and delays
-# It's best to start using I2C clock 1000 Hz and then you can increase it
+# It's best to start using I2C clock slower and then you can increase it
 # until the sensor stops responding (NAK fails, etc)
-i2c = busio.I2C(board.SCL, board.SDA, frequency=1000)
+#i2c = busio.I2C(board.SCL, board.SDA, frequency=1000) # for FT232H, use 1KHz
+i2c = busio.I2C(board.SCL, board.SDA, frequency=50000) # for MCP2221 and others, use 50KHz
 scd = adafruit_scd30.SCD30(i2c)
 
 while True:
