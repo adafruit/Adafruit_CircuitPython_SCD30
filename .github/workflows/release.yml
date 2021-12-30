@@ -32,7 +32,7 @@ jobs:
       run: |
         python3 --version
     - name: Checkout Current Repo
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         submodules: true
     - name: Checkout tools repo
@@ -60,7 +60,7 @@ jobs:
   upload-pypi:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Check For setup.py
       id: need-pypi
       run: |
