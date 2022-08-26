@@ -33,6 +33,11 @@ from struct import unpack_from, unpack
 from adafruit_bus_device import i2c_device
 from micropython import const
 
+try:
+    from typing import Union, Optional  # pylint: disable=unused-import
+    from busio import I2C
+except ImportError:
+    pass
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_SCD30.git"
@@ -85,7 +90,9 @@ class SCD30:
 
     """
 
-    def __init__(self, i2c_bus, ambient_pressure=0, address=SCD30_DEFAULT_ADDR):
+    def __init__(
+        self, i2c_bus: I2C, ambient_pressure: int = 0, address: int = SCD30_DEFAULT_ADDR
+    ) -> None:
         if ambient_pressure != 0:
             if ambient_pressure < 700 or ambient_pressure > 1400:
                 raise AttributeError("`ambient_pressure` must be from 700-1400 mBar")
@@ -104,13 +111,13 @@ class SCD30:
         self._relative_humidity = None
         self._co2 = None
 
-    def reset(self):
+    def reset(self) -> None:
         """Perform a soft reset on the sensor, restoring default values"""
         self._send_command(_CMD_SOFT_RESET)
         time.sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
 
     @property
-    def measurement_interval(self):
+    def measurement_interval(self) -> int:
         """Sets the interval between readings in seconds. The interval value must be from 2-1800
 
         .. note::
@@ -121,13 +128,13 @@ class SCD30:
         return self._read_register(_CMD_SET_MEASUREMENT_INTERVAL)
 
     @measurement_interval.setter
-    def measurement_interval(self, value):
+    def measurement_interval(self, value: int) -> None:
         if value < 2 or value > 1800:
             raise AttributeError("measurement_interval must be from 2-1800 seconds")
         self._send_command(_CMD_SET_MEASUREMENT_INTERVAL, value)
 
     @property
-    def self_calibration_enabled(self):
+    def self_calibration_enabled(self) -> bool:
         """Enables or disables automatic self calibration (ASC). To work correctly, the sensor must
         be on and active for 7 days after enabling ASC, and exposed to fresh air for at least 1 hour
         per day. Consult the manufacturer's documentation for more information.
@@ -144,32 +151,32 @@ class SCD30:
         return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
     @self_calibration_enabled.setter
-    def self_calibration_enabled(self, enabled):
+    def self_calibration_enabled(self, enabled: bool) -> None:
         self._send_command(_CMD_AUTOMATIC_SELF_CALIBRATION, enabled)
         if enabled:
             time.sleep(0.01)
 
     @property
-    def data_available(self):
+    def data_available(self) -> bool:
         """Check the sensor to see if new data is available"""
         return self._read_register(_CMD_GET_DATA_READY)
 
     @property
-    def ambient_pressure(self):
+    def ambient_pressure(self) -> int:
         """Specifies the ambient air pressure at the measurement location in mBar. Setting this
         value adjusts the CO2 measurement calculations to account for the air pressure's effect on
         readings. Values must be in mBar, from 700 to 1400 mBar"""
         return self._read_register(_CMD_CONTINUOUS_MEASUREMENT)
 
     @ambient_pressure.setter
-    def ambient_pressure(self, pressure_mbar):
+    def ambient_pressure(self, pressure_mbar: int) -> None:
         pressure_mbar = int(pressure_mbar)
         if pressure_mbar != 0 and (pressure_mbar > 1400 or pressure_mbar < 700):
             raise AttributeError("ambient_pressure must be from 700 to 1400 mBar")
         self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
 
     @property
-    def altitude(self):
+    def altitude(self) -> int:
         """Specifies the altitude at the measurement location in meters above sea level. Setting
         this value adjusts the CO2 measurement calculations to account for the air pressure's effect
         on readings.
@@ -182,11 +189,11 @@ class SCD30:
         return self._read_register(_CMD_SET_ALTITUDE_COMPENSATION)
 
     @altitude.setter
-    def altitude(self, altitude):
+    def altitude(self, altitude: int) -> None:
         self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, int(altitude))
 
     @property
-    def temperature_offset(self):
+    def temperature_offset(self) -> float:
         """Specifies the offset to be added to the reported measurements to account for a bias in
         the measured signal. Value is in degrees Celsius with a resolution of 0.01 degrees and a
         maximum value of 655.35 C
@@ -200,7 +207,7 @@ class SCD30:
         return raw_offset / 100.0
 
     @temperature_offset.setter
-    def temperature_offset(self, offset):
+    def temperature_offset(self, offset: Union[float, int]) -> None:
         if offset > 655.35:
             raise AttributeError(
                 "Offset value must be less than or equal to 655.35 degrees Celsius"
@@ -209,7 +216,7 @@ class SCD30:
         self._send_command(_CMD_SET_TEMPERATURE_OFFSET, int(offset * 100))
 
     @property
-    def forced_recalibration_reference(self):
+    def forced_recalibration_reference(self) -> int:
         """Specifies the concentration of a reference source of CO2 placed in close proximity to the
         sensor. The value must be from 400 to 2000 ppm.
 
@@ -221,11 +228,11 @@ class SCD30:
         return self._read_register(_CMD_SET_FORCED_RECALIBRATION_FACTOR)
 
     @forced_recalibration_reference.setter
-    def forced_recalibration_reference(self, reference_value):
+    def forced_recalibration_reference(self, reference_value: int) -> None:
         self._send_command(_CMD_SET_FORCED_RECALIBRATION_FACTOR, reference_value)
 
     @property
-    def CO2(self):  # pylint:disable=invalid-name
+    def CO2(self) -> float:  # pylint:disable=invalid-name
         """Returns the CO2 concentration in PPM (parts per million)
 
         .. note::
@@ -237,7 +244,7 @@ class SCD30:
         return self._co2
 
     @property
-    def temperature(self):
+    def temperature(self) -> float:
         """Returns the current temperature in degrees Celsius
 
         .. note::
@@ -249,7 +256,7 @@ class SCD30:
         return self._temperature
 
     @property
-    def relative_humidity(self):
+    def relative_humidity(self) -> float:
         """Returns the current relative humidity in %rH.
 
         .. note::
@@ -260,7 +267,7 @@ class SCD30:
             self._read_data()
         return self._relative_humidity
 
-    def _send_command(self, command, arguments=None):
+    def _send_command(self, command: int, arguments: Optional[int] = None) -> None:
         # if there is an argument, calculate the CRC and include it as well.
         if arguments is not None:
             self._crc_buffer[0] = arguments >> 8
@@ -280,7 +287,7 @@ class SCD30:
             i2c.write(self._buffer, end=end_byte)
         time.sleep(0.05)  # 3ms min delay
 
-    def _read_register(self, reg_addr):
+    def _read_register(self, reg_addr: int) -> int:
         self._buffer[0] = reg_addr >> 8
         self._buffer[1] = reg_addr & 0xFF
         with self.i2c_device as i2c:
@@ -293,7 +300,7 @@ class SCD30:
             raise RuntimeError("CRC check failed while reading data")
         return unpack_from(">H", self._buffer[0:2])[0]
 
-    def _read_data(self):
+    def _read_data(self) -> None:
         self._send_command(_CMD_READ_MEASUREMENT)
         with self.i2c_device as i2c:
             i2c.readinto(self._buffer)
@@ -314,11 +321,11 @@ class SCD30:
             ">f", self._buffer[12:14] + self._buffer[15:17]
         )[0]
 
-    def _check_crc(self, data_bytes, crc):
+    def _check_crc(self, data_bytes: bytearray, crc: int) -> bool:
         return crc == self._crc8(bytearray(data_bytes))
 
     @staticmethod
-    def _crc8(buffer):
+    def _crc8(buffer: bytearray) -> int:
         crc = 0xFF
         for byte in buffer:
             crc ^= byte
