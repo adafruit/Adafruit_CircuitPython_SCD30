@@ -34,7 +34,8 @@ from adafruit_bus_device import i2c_device
 from micropython import const
 
 try:
-    from typing import Union, Optional  # pylint: disable=unused-import
+    from typing import Union, Optional
+    from circuitpython_typing import ReadableBuffer
     from busio import I2C
 except ImportError:
     pass
@@ -321,7 +322,7 @@ class SCD30:
             ">f", self._buffer[12:14] + self._buffer[15:17]
         )[0]
 
-    def _check_crc(self, data_bytes: bytearray, crc: int) -> bool:
+    def _check_crc(self, data_bytes: ReadableBuffer, crc: int) -> bool:
         return crc == self._crc8(bytearray(data_bytes))
 
     @staticmethod
