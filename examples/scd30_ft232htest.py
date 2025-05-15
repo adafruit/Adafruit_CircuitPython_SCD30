@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: Unlicense
 import time
+
 import board
 import busio
+
 import adafruit_scd30
 
 # SCD-30 has tempremental I2C with clock stretching, and delays

@@ -29,14 +29,16 @@ Implementation Notes
 
 # imports
 import time
-from struct import unpack_from, unpack
+from struct import unpack, unpack_from
+
 from adafruit_bus_device import i2c_device
 from micropython import const
 
 try:
-    from typing import Union, Optional
-    from circuitpython_typing import ReadableBuffer
+    from typing import Optional, Union
+
     from busio import I2C
+    from circuitpython_typing import ReadableBuffer
 except ImportError:
     pass
 
@@ -318,9 +320,7 @@ class SCD30:
 
         self._co2 = unpack(">f", self._buffer[0:2] + self._buffer[3:5])[0]
         self._temperature = unpack(">f", self._buffer[6:8] + self._buffer[9:11])[0]
-        self._relative_humidity = unpack(
-            ">f", self._buffer[12:14] + self._buffer[15:17]
-        )[0]
+        self._relative_humidity = unpack(">f", self._buffer[12:14] + self._buffer[15:17])[0]
 
     def _check_crc(self, data_bytes: ReadableBuffer, crc: int) -> bool:
         return crc == self._crc8(bytearray(data_bytes))
