@@ -19,9 +19,9 @@ while True:
     # the values, to ensure current readings.
     if scd.data_available:
         print("Data Available!")
-        print("CO2: %d PPM" % scd.CO2)
-        print("Temperature: %0.2f degrees C" % scd.temperature)
-        print("Humidity: %0.2f %% rH" % scd.relative_humidity)
+        print(f"CO2: {scd.CO2:d} PPM")
+        print(f"Temperature: {scd.temperature:0.2f} degrees C")
+        print(f"Humidity: {scd.relative_humidity:0.2f} % rH")
         print("")
         print("Waiting for new data...")
         print("")
