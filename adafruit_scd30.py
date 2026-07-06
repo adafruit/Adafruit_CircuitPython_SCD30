@@ -256,7 +256,8 @@ class SCD30:
         on readings.
 
         .. note::
-            This value will be saved and will not be reset on boot or by calling `reset`.
+            This value is only used when `ambient_pressure` is set to `0 (disabled)`.
+            It is saved in NVR and will not be reset on boot, reset or powercycle.
 
         :return: the currently configured altitude compensation, in meters above sea level
         :rtype: int
