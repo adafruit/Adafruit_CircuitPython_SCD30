@@ -142,8 +142,8 @@ class SCD30:
     def stop_continuous_measurement(self) -> None:
         """Stops the continuous measurement of the SCD30
 
-        This is provide for completness.  There is only one mode: `continuous_measurement`
-        so stopping does not allow measurements to be taken.
+        This is provide for completness.  There is only one SC30 mode: continuous_measurement
+        so `stop_continuous_measurement()` freezes measurements at the last measurement.
 
         :return: None
         :rtype: None
@@ -256,7 +256,7 @@ class SCD30:
         on readings.
 
         .. note::
-            This value is only used when `ambient_pressure` is set to `0 (disabled)`.
+            This value is only used when `ambient_pressure` is set to 0=(disabled).
             It is saved in NVR and will not be reset on boot, reset or powercycle.
 
         :return: the currently configured altitude compensation, in meters above sea level
