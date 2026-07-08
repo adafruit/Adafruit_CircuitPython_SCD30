@@ -219,8 +219,6 @@ class SCD30:
         :return: True if a new measurement is ready to be read
         :rtype: bool
         """
-        # `_read_register` returns the raw unpacked uint16 (0 or 1), not a real Python bool;
-        # coerce it to property as typed `-> bool`
         return bool(self._read_register(_CMD_GET_DATA_READY))
 
     @property
