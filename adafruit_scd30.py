@@ -47,6 +47,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_SCD30.git"
 SCD30_DEFAULT_ADDR = 0x61
 
 _CMD_CONTINUOUS_MEASUREMENT = const(0x0010)
+_CMD_STOP_CONTINUOUS_MEASUREMENT = const(0x0104)
 _CMD_SET_MEASUREMENT_INTERVAL = const(0x4600)
 _CMD_GET_DATA_READY = const(0x0202)
 _CMD_READ_MEASUREMENT = const(0x0300)
@@ -55,6 +56,7 @@ _CMD_SET_FORCED_RECALIBRATION_FACTOR = const(0x5204)
 _CMD_SET_TEMPERATURE_OFFSET = const(0x5403)
 _CMD_SET_ALTITUDE_COMPENSATION = const(0x5102)
 _CMD_SOFT_RESET = const(0xD304)
+_CMD_READ_FIRMWARE_VERSION = const(0xD100)
 
 
 class SCD30:
@@ -91,11 +93,24 @@ class SCD30:
             relative_humidity = scd.relative_humidity
             co2_ppm_level = scd.CO2
 
+    .. note::
+        `ambient_pressure` default: disabled is written on every construction of this
+        object (to start continuous measurement).
+        `measurement_interval` defaults to :const:`2` on a new sensor but persists in NVM
+        so if changed by your application will persist across power cycles.
+
     """
 
     def __init__(
         self, i2c_bus: I2C, ambient_pressure: int = 0, address: int = SCD30_DEFAULT_ADDR
     ) -> None:
+        """
+        :param ~busio.I2C i2c_bus: The I2C bus the SCD30 is connected to.
+        :param int ambient_pressure: Ambient pressure compensation in mBar, :const:`0`
+            (disabled) or ``700``-``1400``. Defaults to :const:`0`.
+        :param int address: The I2C device address for the sensor. Defaults to :const:`0x61`.
+        :raises AttributeError: if `ambient_pressure` is nonzero and outside 700-1400 mBar.
+        """
         if ambient_pressure != 0:
             if ambient_pressure < 700 or ambient_pressure > 1400:
                 raise AttributeError("`ambient_pressure` must be from 700-1400 mBar")
@@ -104,18 +119,44 @@ class SCD30:
         self._buffer = bytearray(18)
         self._crc_buffer = bytearray(2)
 
-        # set continuous measurement interval in seconds
-        self.measurement_interval = 2
-        # trigger continuous measurements with optional ambient pressure compensation
-        self.ambient_pressure = ambient_pressure
+        # start continuous measurements with optional ambient pressure compensation
+        self.start_continuous_measurement(ambient_pressure)
 
         # cached readings
         self._temperature = None
         self._relative_humidity = None
         self._co2 = None
 
+    def start_continuous_measurement(self, pressure_mbar: int = 0) -> None:
+        """Start continuous measurement - with optional ambient pressure
+
+        :param int pressure_mbar: the ambient pressure in mbar from 700-1400
+        :return: None
+        :rtype: None
+        """
+        pressure_mbar = round(pressure_mbar)
+        if pressure_mbar != 0 and (pressure_mbar > 1400 or pressure_mbar < 700):
+            raise AttributeError("ambient_pressure must be from 700 to 1400 mBar")
+        self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
+
+    def stop_continuous_measurement(self) -> None:
+        """Stops the continuous measurement of the SCD30
+
+        This is provide for completness.  There is only one SC30 mode: continuous_measurement
+        so `stop_continuous_measurement()` freezes measurements at the last measurement.
+
+        :return: None
+        :rtype: None
+        """
+        self._send_command(_CMD_STOP_CONTINUOUS_MEASUREMENT)
+        time.sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
+
     def reset(self) -> None:
-        """Perform a soft reset on the sensor, restoring default values"""
+        """Perform a soft reset on the sensor, restoring default values.
+
+        :return: None
+        :rtype: None
+        """
         self._send_command(_CMD_SOFT_RESET)
         time.sleep(0.1)  # not mentioned by datasheet, but required to avoid IO error
 
@@ -124,14 +165,21 @@ class SCD30:
         """Sets the interval between readings in seconds. The interval value must be from 2-1800
 
         .. note::
-            This value will be saved and will not be reset on boot or by calling `reset`.
+            This value will be saved in nvm and will persist across powercycles, reboots
+            or by calling `reset`.
 
+        :return: the currently configured measurement interval, in seconds
+        :rtype: int
         """
 
         return self._read_register(_CMD_SET_MEASUREMENT_INTERVAL)
 
     @measurement_interval.setter
     def measurement_interval(self, value: int) -> None:
+        """
+        :param int value: the measurement interval in seconds, from 2-1800
+        :raises AttributeError: if `value` is outside 2-1800
+        """
         if value < 2 or value > 1800:
             raise AttributeError("measurement_interval must be from 2-1800 seconds")
         self._send_command(_CMD_SET_MEASUREMENT_INTERVAL, value)
@@ -149,34 +197,55 @@ class SCD30:
         .. note::
             This value will be saved and will not be reset on boot or by calling `reset`.
 
+        :return: whether automatic self calibration is currently enabled
+        :rtype: bool
         """
 
         return self._read_register(_CMD_AUTOMATIC_SELF_CALIBRATION) == 1
 
     @self_calibration_enabled.setter
     def self_calibration_enabled(self, enabled: bool) -> None:
+        """
+        :param bool enabled: whether to enable automatic self calibration
+        """
         self._send_command(_CMD_AUTOMATIC_SELF_CALIBRATION, enabled)
         if enabled:
             time.sleep(0.01)
 
     @property
     def data_available(self) -> bool:
-        """Check the sensor to see if new data is available"""
-        return self._read_register(_CMD_GET_DATA_READY)
+        """Check the sensor to see if new data is available.
+
+        :return: True if a new measurement is ready to be read
+        :rtype: bool
+        """
+        return bool(self._read_register(_CMD_GET_DATA_READY))
 
     @property
     def ambient_pressure(self) -> int:
         """Specifies the ambient air pressure at the measurement location in mBar. Setting this
         value adjusts the CO2 measurement calculations to account for the air pressure's effect on
-        readings. Values must be in mBar, from 700 to 1400 mBar"""
+        readings. Values must be in mBar, from 700 to 1400 mBar
+
+        .. note::
+            This value is **not** saved and will be reset to 0=disabled on powercycle, boot or
+            by calling `reset`.  For non-volatile compensation use altitude instead (saved in nvm)
+
+        :return: the currently configured ambient pressure compensation, in mBar
+        :rtype: int
+        """
         return self._read_register(_CMD_CONTINUOUS_MEASUREMENT)
 
     @ambient_pressure.setter
     def ambient_pressure(self, pressure_mbar: int) -> None:
-        pressure_mbar = int(pressure_mbar)
-        if pressure_mbar != 0 and (pressure_mbar > 1400 or pressure_mbar < 700):
-            raise AttributeError("ambient_pressure must be from 700 to 1400 mBar")
-        self._send_command(_CMD_CONTINUOUS_MEASUREMENT, pressure_mbar)
+        """
+        :param int pressure_mbar: ambient pressure in mBar, :const:`0` (disabled) or
+            ``700``-``1400``
+        :raises AttributeError: if `pressure_mbar` is nonzero and outside 700-1400 mBar
+        """
+        # Ambient pressure is set through start_continuous_measurement command
+        # bounds checking done there
+        self.start_continuous_measurement(pressure_mbar)
 
     @property
     def altitude(self) -> int:
@@ -185,14 +254,19 @@ class SCD30:
         on readings.
 
         .. note::
-            This value will be saved and will not be reset on boot or by calling `reset`.
+            This value is only used when `ambient_pressure` is set to 0=(disabled).
+            It is saved in NVR and will not be reset on boot, reset or powercycle.
 
-
+        :return: the currently configured altitude compensation, in meters above sea level
+        :rtype: int
         """
         return self._read_register(_CMD_SET_ALTITUDE_COMPENSATION)
 
     @altitude.setter
     def altitude(self, altitude: int) -> None:
+        """
+        :param int altitude: altitude in meters above sea level
+        """
         self._send_command(_CMD_SET_ALTITUDE_COMPENSATION, int(altitude))
 
     @property
@@ -204,6 +278,8 @@ class SCD30:
         .. note::
             This value will be saved and will not be reset on boot or by calling `reset`.
 
+        :return: the currently configured temperature offset, in degrees Celsius
+        :rtype: float
         """
 
         raw_offset = self._read_register(_CMD_SET_TEMPERATURE_OFFSET)
@@ -211,12 +287,14 @@ class SCD30:
 
     @temperature_offset.setter
     def temperature_offset(self, offset: Union[float, int]) -> None:
-        if offset > 655.35:
-            raise AttributeError(
-                "Offset value must be less than or equal to 655.35 degrees Celsius"
-            )
-
-        self._send_command(_CMD_SET_TEMPERATURE_OFFSET, int(offset * 100))
+        """
+        :param offset: offset in degrees Celsius, from 0 to 655.35 (0.01 C resolution)
+        :type offset: float or int
+        :raises AttributeError: if `offset` is negative or greater than 655.35 degrees Celsius
+        """
+        if offset < 0 or offset > 655.35:
+            raise AttributeError("Offset value must be from 0 to 655.35 degrees Celsius")
+        self._send_command(_CMD_SET_TEMPERATURE_OFFSET, round(offset * 100))
 
     @property
     def forced_recalibration_reference(self) -> int:
@@ -227,11 +305,24 @@ class SCD30:
             Specifying a forced recalibration reference will override any calibration values
             set by Automatic Self Calibration
 
+        .. warning::
+            Before applying, the sensor should be running in continuous measurement mode, at
+            the default 2 second interval, in a stable known-CO2 environment, for at least 2
+            minutes. This permanently updates the sensor's calibration curve.
+
+        :return: the currently configured forced recalibration reference, in ppm
+        :rtype: int
         """
         return self._read_register(_CMD_SET_FORCED_RECALIBRATION_FACTOR)
 
     @forced_recalibration_reference.setter
     def forced_recalibration_reference(self, reference_value: int) -> None:
+        """
+        :param int reference_value: reference CO2 concentration in ppm, from 400 to 2000
+        :raises AttributeError: if `reference_value` is outside 400-2000 ppm
+        """
+        if reference_value < 400 or reference_value > 2000:
+            raise AttributeError("forced_recalibration_reference must be from 400 to 2000 ppm")
         self._send_command(_CMD_SET_FORCED_RECALIBRATION_FACTOR, reference_value)
 
     @property
@@ -239,8 +330,11 @@ class SCD30:
         """Returns the CO2 concentration in PPM (parts per million)
 
         .. note::
-            Between measurements, the most recent reading will be cached and returned.
+            Between measurements, the most recent reading will be cached and returned. If
+            called before the first measurement has completed, returns :const:`None`.
 
+        :return: CO2 concentration in ppm, or None if no measurement has completed yet
+        :rtype: float or None
         """
         if self.data_available:
             self._read_data()
@@ -251,8 +345,11 @@ class SCD30:
         """Returns the current temperature in degrees Celsius
 
         .. note::
-            Between measurements, the most recent reading will be cached and returned.
+            Between measurements, the most recent reading will be cached and returned. If
+            called before the first measurement has completed, returns :const:`None`.
 
+        :return: temperature in degrees Celsius, or None if no measurement has completed yet
+        :rtype: float or None
         """
         if self.data_available:
             self._read_data()
@@ -263,12 +360,27 @@ class SCD30:
         """Returns the current relative humidity in %rH.
 
         .. note::
-            Between measurements, the most recent reading will be cached and returned.
+            Between measurements, the most recent reading will be cached and returned. If
+            called before the first measurement has completed, returns :const:`None`.
 
+        :return: relative humidity in %rH, or None if no measurement has completed yet
+        :rtype: float or None
         """
         if self.data_available:
             self._read_data()
         return self._relative_humidity
+
+    @property
+    def firmware_version(self) -> str:
+        """Returns the firmware version of the sensor.  Can also be used to check
+        whether sensor is present and responding.
+
+        :return: the sensor firmware version major/minor rev
+        :rtype: str
+        """
+        # Datasheet example lists V3.66
+        fwver = self._read_register(_CMD_READ_FIRMWARE_VERSION)
+        return f"{fwver >> 8:1d}.{fwver & 0xFF:1d}"
 
     def _send_command(self, command: int, arguments: Optional[int] = None) -> None:
         # if there is an argument, calculate the CRC and include it as well.
@@ -288,7 +400,8 @@ class SCD30:
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer, end=end_byte)
-        time.sleep(0.05)  # 3ms min delay
+        # Datasheet requires >3ms between a write and any following read
+        time.sleep(0.050)  # This is a safe number lower numbers have timeouts
 
     def _read_register(self, reg_addr: int) -> int:
         self._buffer[0] = reg_addr >> 8
@@ -297,7 +410,7 @@ class SCD30:
             i2c.write(self._buffer, end=2)
             # separate readinto because the SCD30 wants an i2c stop before the read
             # (non-repeated start)
-            time.sleep(0.005)  # min 3 ms delay
+            time.sleep(0.010)  # doubled due to occasional timeouts
             i2c.readinto(self._buffer, end=3)
         if not self._check_crc(self._buffer[:2], self._buffer[2]):
             raise RuntimeError("CRC check failed while reading data")

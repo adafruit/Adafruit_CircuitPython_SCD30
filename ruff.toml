@@ -100,5 +100,9 @@ ignore = [
     "PLR0916", # too-many-boolean-expressions
 ]
 
+exclude = [
+  "hw_tests/*.py"
+]
+
 [format]
 line-ending = "lf"
